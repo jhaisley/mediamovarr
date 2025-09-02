@@ -1,11 +1,11 @@
 """Media type classification logic."""
 
-import re
 import logging
+import re
 from pathlib import Path
-from typing import Tuple, Optional
-from .discovery import get_folder_info
+from typing import Optional, Tuple
 
+from .discovery import get_folder_info
 
 logger = logging.getLogger(__name__)
 
@@ -32,18 +32,30 @@ def classify_media(folder_path: Path, tmdb_client=None) -> Tuple[str, float, boo
     folder_name = folder_path.name.lower()
     video_files, audio_files, subdirs, total_files = get_folder_info(folder_path)
 
-    logger.debug(f"Classifying {folder_path.name}: {video_files} video, {audio_files} audio, {subdirs} subdirs")
+    logger.debug(
+        f"Classifying {folder_path.name}: {video_files} video, {audio_files} audio, {subdirs} subdirs"
+    )
 
     # Get base confidence scores from pattern matching
-    tv_confidence = _detect_tv_show(folder_path, folder_name, video_files, audio_files, subdirs)
-    movie_confidence = _detect_movie(folder_path, folder_name, video_files, audio_files, subdirs)
-    music_confidence = _detect_music(folder_path, folder_name, video_files, audio_files, subdirs)
-    audiobook_confidence = _detect_audiobook(folder_path, folder_name, video_files, audio_files, subdirs)
+    tv_confidence = _detect_tv_show(
+        folder_path, folder_name, video_files, audio_files, subdirs
+    )
+    movie_confidence = _detect_movie(
+        folder_path, folder_name, video_files, audio_files, subdirs
+    )
+    music_confidence = _detect_music(
+        folder_path, folder_name, video_files, audio_files, subdirs
+    )
+    audiobook_confidence = _detect_audiobook(
+        folder_path, folder_name, video_files, audio_files, subdirs
+    )
 
     # Apply TMDb smart validation if available and video content detected
     tmdb_match_found = False
     if tmdb_client and (video_files > 0):
-        tv_confidence, movie_confidence, tmdb_match_found = _apply_tmdb_validation(folder_path, tmdb_client, tv_confidence, movie_confidence)
+        tv_confidence, movie_confidence, tmdb_match_found = _apply_tmdb_validation(
+            folder_path, tmdb_client, tv_confidence, movie_confidence
+        )
 
     # Check for clear winners above threshold
     if tv_confidence > 0.7:
@@ -71,7 +83,9 @@ def classify_media(folder_path: Path, tmdb_client=None) -> Tuple[str, float, boo
     return best_type, best_confidence, tmdb_match_found
 
 
-def _apply_tmdb_validation(folder_path: Path, tmdb_client, tv_confidence: float, movie_confidence: float) -> Tuple[float, float, bool]:
+def _apply_tmdb_validation(
+    folder_path: Path, tmdb_client, tv_confidence: float, movie_confidence: float
+) -> Tuple[float, float, bool]:
     """
     Apply TMDb-based validation to adjust TV/Movie confidence scores.
 
@@ -98,7 +112,9 @@ def _apply_tmdb_validation(folder_path: Path, tmdb_client, tv_confidence: float,
         movie_confidence = max(movie_confidence - 0.3, 0.0)  # Penalty to movie
 
     elif movie_match and not tv_match:
-        logger.info("TMDb: Movie found, no TV show match → Strong movie confidence boost")
+        logger.info(
+            "TMDb: Movie found, no TV show match → Strong movie confidence boost"
+        )
         movie_confidence = min(movie_confidence + 0.7, 1.0)  # Strong boost
         tv_confidence = max(tv_confidence - 0.3, 0.0)  # Penalty to TV
 
@@ -108,7 +124,9 @@ def _apply_tmdb_validation(folder_path: Path, tmdb_client, tv_confidence: float,
 
         # Check which has better match score (TMDb popularity/vote_average)
         tv_score = tv_match.get("popularity", 0) + tv_match.get("vote_average", 0) * 10
-        movie_score = movie_match.get("popularity", 0) + movie_match.get("vote_average", 0) * 10
+        movie_score = (
+            movie_match.get("popularity", 0) + movie_match.get("vote_average", 0) * 10
+        )
 
         if tv_score > movie_score:
             tv_confidence = min(tv_confidence + 0.3, 1.0)
@@ -133,13 +151,22 @@ def _extract_title_from_folder(folder_name: str) -> str:
     title = folder_name
 
     # Remove quality indicators
-    title = re.sub(r"\b(1080p|720p|480p|4k|uhd|hd|sd)\b", "", title, flags=re.IGNORECASE)
+    title = re.sub(
+        r"\b(1080p|720p|480p|4k|uhd|hd|sd)\b", "", title, flags=re.IGNORECASE
+    )
 
     # Remove source indicators
-    title = re.sub(r"\b(bluray|blu-ray|dvdrip|webrip|hdtv|web-dl|brrip)\b", "", title, flags=re.IGNORECASE)
+    title = re.sub(
+        r"\b(bluray|blu-ray|dvdrip|webrip|hdtv|web-dl|brrip)\b",
+        "",
+        title,
+        flags=re.IGNORECASE,
+    )
 
     # Remove encoding info
-    title = re.sub(r"\b(x264|x265|h264|h265|xvid|divx)\b", "", title, flags=re.IGNORECASE)
+    title = re.sub(
+        r"\b(x264|x265|h264|h265|xvid|divx)\b", "", title, flags=re.IGNORECASE
+    )
 
     # Remove group tags (usually at the end)
     title = re.sub(r"-[A-Z0-9]+$", "", title, flags=re.IGNORECASE)
@@ -173,7 +200,13 @@ def _extract_year_from_folder(folder_name: str) -> Optional[int]:
     return None
 
 
-def _detect_tv_show(folder_path: Path, folder_name: str, video_files: int, audio_files: int, subdirs: int) -> float:
+def _detect_tv_show(
+    folder_path: Path,
+    folder_name: str,
+    video_files: int,
+    audio_files: int,
+    subdirs: int,
+) -> float:
     """Detect TV show with confidence score."""
     confidence = 0.0
 
@@ -191,7 +224,13 @@ def _detect_tv_show(folder_path: Path, folder_name: str, video_files: int, audio
             break
 
     # Check for season indicators
-    season_patterns = [r"season\s*\d+", r"s\d+", r"series\s*\d+", r"season\s*0?\d", r"complete\s*series"]
+    season_patterns = [
+        r"season\s*\d+",
+        r"s\d+",
+        r"series\s*\d+",
+        r"season\s*0?\d",
+        r"complete\s*series",
+    ]
 
     for pattern in season_patterns:
         if re.search(pattern, folder_name, re.IGNORECASE):
@@ -200,8 +239,14 @@ def _detect_tv_show(folder_path: Path, folder_name: str, video_files: int, audio
 
     # Check subdirectory structure for seasons
     try:
-        subdirectories = [item.name.lower() for item in folder_path.iterdir() if item.is_dir()]
-        season_subdirs = sum(1 for subdir in subdirectories if "season" in subdir or re.match(r"s\d+", subdir))
+        subdirectories = [
+            item.name.lower() for item in folder_path.iterdir() if item.is_dir()
+        ]
+        season_subdirs = sum(
+            1
+            for subdir in subdirectories
+            if "season" in subdir or re.match(r"s\d+", subdir)
+        )
 
         if season_subdirs > 0:
             confidence += 0.5
@@ -212,7 +257,9 @@ def _detect_tv_show(folder_path: Path, folder_name: str, video_files: int, audio
             if subdir.is_dir():
                 files = [f.name.lower() for f in subdir.iterdir() if f.is_file()]
                 for file_name in files:
-                    if any(re.search(pattern, file_name) for pattern in episode_patterns):
+                    if any(
+                        re.search(pattern, file_name) for pattern in episode_patterns
+                    ):
                         episode_files += 1
 
         if episode_files > 2:
@@ -228,7 +275,13 @@ def _detect_tv_show(folder_path: Path, folder_name: str, video_files: int, audio
     return min(confidence, 1.0)
 
 
-def _detect_movie(folder_path: Path, folder_name: str, video_files: int, audio_files: int, subdirs: int) -> float:
+def _detect_movie(
+    folder_path: Path,
+    folder_name: str,
+    video_files: int,
+    audio_files: int,
+    subdirs: int,
+) -> float:
     """Detect movie with confidence score."""
     confidence = 0.0
 
@@ -281,12 +334,20 @@ def _detect_movie(folder_path: Path, folder_name: str, video_files: int, audio_f
     try:
         video_files_list = []
         for item in folder_path.rglob("*"):
-            if item.is_file() and item.suffix.lower() in {".mp4", ".mkv", ".avi", ".mov", ".wmv"}:
+            if item.is_file() and item.suffix.lower() in {
+                ".mp4",
+                ".mkv",
+                ".avi",
+                ".mov",
+                ".wmv",
+            }:
                 video_files_list.append(item)
 
         if video_files_list:
             # Check if main video file is large (> 500MB suggests movie)
-            largest_file = max(video_files_list, key=lambda f: f.stat().st_size if f.exists() else 0)
+            largest_file = max(
+                video_files_list, key=lambda f: f.stat().st_size if f.exists() else 0
+            )
             if largest_file.stat().st_size > 500 * 1024 * 1024:  # 500MB
                 confidence += 0.2
 
@@ -300,7 +361,13 @@ def _detect_movie(folder_path: Path, folder_name: str, video_files: int, audio_f
     return min(confidence, 1.0)
 
 
-def _detect_music(folder_path: Path, folder_name: str, video_files: int, audio_files: int, subdirs: int) -> float:
+def _detect_music(
+    folder_path: Path,
+    folder_name: str,
+    video_files: int,
+    audio_files: int,
+    subdirs: int,
+) -> float:
     """Detect music with confidence score."""
     confidence = 0.0
 
@@ -337,11 +404,20 @@ def _detect_music(folder_path: Path, folder_name: str, video_files: int, audio_f
         # Look for track numbering in files
         audio_files_list = []
         for item in folder_path.rglob("*"):
-            if item.is_file() and item.suffix.lower() in {".mp3", ".flac", ".wav", ".aac", ".ogg", ".m4a"}:
+            if item.is_file() and item.suffix.lower() in {
+                ".mp3",
+                ".flac",
+                ".wav",
+                ".aac",
+                ".ogg",
+                ".m4a",
+            }:
                 audio_files_list.append(item.name.lower())
 
         # Check for track numbering patterns
-        numbered_tracks = sum(1 for name in audio_files_list if re.match(r"^\d+[\s\-\.]", name))
+        numbered_tracks = sum(
+            1 for name in audio_files_list if re.match(r"^\d+[\s\-\.]", name)
+        )
         if numbered_tracks >= 3:
             confidence += 0.3
 
@@ -353,13 +429,21 @@ def _detect_music(folder_path: Path, folder_name: str, video_files: int, audio_f
         pass
 
     # Year pattern in music (often just year, not in parentheses)
-    if re.search(r"\b19\d{2}\b|\b20\d{2}\b", folder_name) and not re.search(r"\(19\d{2}\)|\(20\d{2}\)", folder_name):
+    if re.search(r"\b19\d{2}\b|\b20\d{2}\b", folder_name) and not re.search(
+        r"\(19\d{2}\)|\(20\d{2}\)", folder_name
+    ):
         confidence += 0.1
 
     return min(confidence, 1.0)
 
 
-def _detect_audiobook(folder_path: Path, folder_name: str, video_files: int, audio_files: int, subdirs: int) -> float:
+def _detect_audiobook(
+    folder_path: Path,
+    folder_name: str,
+    video_files: int,
+    audio_files: int,
+    subdirs: int,
+) -> float:
     """Detect audiobook with confidence score."""
     confidence = 0.0
 
@@ -368,7 +452,20 @@ def _detect_audiobook(folder_path: Path, folder_name: str, video_files: int, aud
         return 0.0
 
     # Check for audiobook-specific keywords
-    audiobook_keywords = ["audiobook", "audio book", "unabridged", "abridged", "narrated", "narrator", "chapter", "part", "cd1", "cd2", "disc", "book"]
+    audiobook_keywords = [
+        "audiobook",
+        "audio book",
+        "unabridged",
+        "abridged",
+        "narrated",
+        "narrator",
+        "chapter",
+        "part",
+        "cd1",
+        "cd2",
+        "disc",
+        "book",
+    ]
 
     keyword_matches = sum(1 for keyword in audiobook_keywords if keyword in folder_name)
     confidence += min(keyword_matches * 0.3, 0.6)
@@ -377,11 +474,25 @@ def _detect_audiobook(folder_path: Path, folder_name: str, video_files: int, aud
     try:
         audio_files_list = []
         for item in folder_path.rglob("*"):
-            if item.is_file() and item.suffix.lower() in {".mp3", ".flac", ".wav", ".aac", ".ogg", ".m4a"}:
+            if item.is_file() and item.suffix.lower() in {
+                ".mp3",
+                ".flac",
+                ".wav",
+                ".aac",
+                ".ogg",
+                ".m4a",
+            }:
                 audio_files_list.append(item.name.lower())
 
         # Look for chapter patterns
-        chapter_patterns = [r"chapter\s*\d+", r"ch\s*\d+", r"part\s*\d+", r"cd\s*\d+", r"disc\s*\d+", r"\d+\s*of\s*\d+"]
+        chapter_patterns = [
+            r"chapter\s*\d+",
+            r"ch\s*\d+",
+            r"part\s*\d+",
+            r"cd\s*\d+",
+            r"disc\s*\d+",
+            r"\d+\s*of\s*\d+",
+        ]
 
         chapter_files = 0
         for file_name in audio_files_list:
@@ -392,7 +503,9 @@ def _detect_audiobook(folder_path: Path, folder_name: str, video_files: int, aud
             confidence += 0.4
 
         # Long audio files suggest audiobook chapters
-        if len(audio_files_list) >= 5 and len(audio_files_list) <= 50:  # Typical chapter count
+        if (
+            len(audio_files_list) >= 5 and len(audio_files_list) <= 50
+        ):  # Typical chapter count
             confidence += 0.2
 
     except (PermissionError, OSError):

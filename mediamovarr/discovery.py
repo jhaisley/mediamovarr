@@ -2,8 +2,7 @@
 
 import logging
 from pathlib import Path
-from typing import List, Generator, Tuple
-
+from typing import Generator, List, Tuple
 
 logger = logging.getLogger(__name__)
 
@@ -45,7 +44,9 @@ def is_media_folder(folder_path: Path) -> bool:
         return False
 
 
-def scan_for_media_folders(scan_dirs: List[str], max_depth: int = 3) -> Generator[Path, None, None]:
+def scan_for_media_folders(
+    scan_dirs: List[str], max_depth: int = 3
+) -> Generator[Path, None, None]:
     """
     Scan directories for potential media folders.
 
@@ -71,7 +72,9 @@ def scan_for_media_folders(scan_dirs: List[str], max_depth: int = 3) -> Generato
             logger.error(f"Error scanning {scan_dir}: {e}")
 
 
-def _scan_directory_recursive(directory: Path, max_depth: int, current_depth: int) -> Generator[Path, None, None]:
+def _scan_directory_recursive(
+    directory: Path, max_depth: int, current_depth: int
+) -> Generator[Path, None, None]:
     """Recursively scan directory for media folders."""
     if current_depth >= max_depth:
         return
@@ -84,7 +87,9 @@ def _scan_directory_recursive(directory: Path, max_depth: int, current_depth: in
                     yield item
                 else:
                     # Continue scanning subdirectories
-                    yield from _scan_directory_recursive(item, max_depth, current_depth + 1)
+                    yield from _scan_directory_recursive(
+                        item, max_depth, current_depth + 1
+                    )
     except (PermissionError, OSError) as e:
         logger.warning(f"Cannot access directory {directory}: {e}")
 
@@ -98,7 +103,9 @@ def _is_complete_media_folder(folder_path: Path) -> bool:
     folder_name = folder_path.name.lower()
 
     # TV show season patterns
-    if "season" in folder_name or any(f"season {i:02d}" in folder_name for i in range(1, 21)):
+    if "season" in folder_name or any(
+        f"season {i:02d}" in folder_name for i in range(1, 21)
+    ):
         return True
 
     # Movie patterns (year in parentheses)
@@ -110,7 +117,17 @@ def _is_complete_media_folder(folder_path: Path) -> bool:
             return True
 
     # Check for common media patterns
-    media_patterns = ["complete", "collection", "series", "trilogy", "saga", "discography", "anthology", "box set", "boxset"]
+    media_patterns = [
+        "complete",
+        "collection",
+        "series",
+        "trilogy",
+        "saga",
+        "discography",
+        "anthology",
+        "box set",
+        "boxset",
+    ]
 
     if any(pattern in folder_name for pattern in media_patterns):
         return True
@@ -121,7 +138,16 @@ def _is_complete_media_folder(folder_path: Path) -> bool:
         files = [item for item in folder_path.iterdir() if item.is_file()]
 
         # If there are video files directly in this folder, it's likely complete
-        video_extensions = {".mp4", ".mkv", ".avi", ".mov", ".wmv", ".flv", ".webm", ".m4v"}
+        video_extensions = {
+            ".mp4",
+            ".mkv",
+            ".avi",
+            ".mov",
+            ".wmv",
+            ".flv",
+            ".webm",
+            ".m4v",
+        }
         video_files = [f for f in files if f.suffix.lower() in video_extensions]
 
         if video_files:
@@ -156,7 +182,16 @@ def get_folder_info(folder_path: Path) -> Tuple[int, int, int, int]:
         files = [item for item in items if item.is_file()]
         subdirs = [item for item in items if item.is_dir()]
 
-        video_extensions = {".mp4", ".mkv", ".avi", ".mov", ".wmv", ".flv", ".webm", ".m4v"}
+        video_extensions = {
+            ".mp4",
+            ".mkv",
+            ".avi",
+            ".mov",
+            ".wmv",
+            ".flv",
+            ".webm",
+            ".m4v",
+        }
         audio_extensions = {".mp3", ".flac", ".wav", ".aac", ".ogg", ".wma", ".m4a"}
 
         video_files = len([f for f in files if f.suffix.lower() in video_extensions])

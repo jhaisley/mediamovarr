@@ -2,15 +2,19 @@
 
 import logging
 from pathlib import Path
-from typing import Dict, List, Any, Tuple
-from .discovery import get_folder_info
+from typing import Any, Dict, List, Tuple
 
+from .discovery import get_folder_info
 
 logger = logging.getLogger(__name__)
 
 
 def apply_confidence_rules(
-    folder_path: Path, base_confidence: float, media_type: str, config: Dict[str, Any], tmdb_match: bool = False
+    folder_path: Path,
+    base_confidence: float,
+    media_type: str,
+    config: Dict[str, Any],
+    tmdb_match: bool = False,
 ) -> Tuple[float, List[str]]:
     """
     Apply custom confidence rules to adjust the base confidence score.
@@ -41,15 +45,23 @@ def apply_confidence_rules(
 
             if rule_applied:
                 old_confidence = adjusted_confidence
-                adjusted_confidence = max(0.0, min(1.0, adjusted_confidence + adjustment))
+                adjusted_confidence = max(
+                    0.0, min(1.0, adjusted_confidence + adjustment)
+                )
 
-                rule_description = f"{rule.get('name', 'Unnamed rule')}: {adjustment:+.2f}"
+                rule_description = (
+                    f"{rule.get('name', 'Unnamed rule')}: {adjustment:+.2f}"
+                )
                 applied_rules.append(rule_description)
 
-                logger.debug(f"Applied rule '{rule.get('name', 'Unnamed')}': {old_confidence:.2f} -> {adjusted_confidence:.2f} ({adjustment:+.2f})")
+                logger.debug(
+                    f"Applied rule '{rule.get('name', 'Unnamed')}': {old_confidence:.2f} -> {adjusted_confidence:.2f} ({adjustment:+.2f})"
+                )
 
         except Exception as e:
-            logger.warning(f"Error applying confidence rule '{rule.get('name', 'Unknown')}': {e}")
+            logger.warning(
+                f"Error applying confidence rule '{rule.get('name', 'Unknown')}': {e}"
+            )
 
     return adjusted_confidence, applied_rules
 
@@ -76,13 +88,21 @@ def _analyze_folder_for_rules(folder_path: Path) -> Dict[str, Any]:
     # Calculate metrics
     avg_file_size = sum(file_sizes) / len(file_sizes) if file_sizes else 0
     has_large_files = any(size > 500 * 1024 * 1024 for size in file_sizes)  # >500MB
-    has_many_small_files = len([s for s in file_sizes if s < 10 * 1024 * 1024]) > 10  # >10 files <10MB
+    has_many_small_files = (
+        len([s for s in file_sizes if s < 10 * 1024 * 1024]) > 10
+    )  # >10 files <10MB
 
     # Check for season structure
     has_season_structure = False
     try:
-        subdirectories = [item.name.lower() for item in folder_path.iterdir() if item.is_dir()]
-        season_dirs = [d for d in subdirectories if "season" in d or d.startswith("s") and d[1:].isdigit()]
+        subdirectories = [
+            item.name.lower() for item in folder_path.iterdir() if item.is_dir()
+        ]
+        season_dirs = [
+            d
+            for d in subdirectories
+            if "season" in d or d.startswith("s") and d[1:].isdigit()
+        ]
         has_season_structure = len(season_dirs) > 0
     except (PermissionError, OSError):
         pass
@@ -102,7 +122,9 @@ def _analyze_folder_for_rules(folder_path: Path) -> Dict[str, Any]:
     }
 
 
-def _evaluate_rule(rule: Dict[str, Any], folder_info: Dict[str, Any], tmdb_match: bool) -> Tuple[bool, float]:
+def _evaluate_rule(
+    rule: Dict[str, Any], folder_info: Dict[str, Any], tmdb_match: bool
+) -> Tuple[bool, float]:
     """
     Evaluate a single confidence rule.
 
@@ -129,19 +151,31 @@ def _evaluate_rule(rule: Dict[str, Any], folder_info: Dict[str, Any], tmdb_match
         return tmdb_match == expected_value, adjustment
 
     elif condition == "single_large_video":
-        return folder_info.get("single_large_video", False) == expected_value, adjustment
+        return (
+            folder_info.get("single_large_video", False) == expected_value,
+            adjustment,
+        )
 
     elif condition == "many_small_files":
         return folder_info.get("many_small_files", False) == expected_value, adjustment
 
     elif condition == "has_season_structure":
-        return folder_info.get("has_season_structure", False) == expected_value, adjustment
+        return (
+            folder_info.get("has_season_structure", False) == expected_value,
+            adjustment,
+        )
 
     elif condition == "video_file_count":
-        return _compare_numeric(folder_info.get("video_files", 0), expected_value), adjustment
+        return (
+            _compare_numeric(folder_info.get("video_files", 0), expected_value),
+            adjustment,
+        )
 
     elif condition == "audio_file_count":
-        return _compare_numeric(folder_info.get("audio_files", 0), expected_value), adjustment
+        return (
+            _compare_numeric(folder_info.get("audio_files", 0), expected_value),
+            adjustment,
+        )
 
     elif condition == "folder_name_contains":
         folder_name = folder_info.get("folder_name", "")
@@ -157,9 +191,8 @@ def _evaluate_rule(rule: Dict[str, Any], folder_info: Dict[str, Any], tmdb_match
 
             return bool(re.search(expected_value.lower(), folder_name)), adjustment
 
-    else:
-        logger.warning(f"Unknown confidence rule condition: {condition}")
-        return False, 0
+    # If no condition matched, return False
+    return False, 0
 
 
 def _compare_numeric(actual: int, expected: Any) -> bool:
@@ -200,7 +233,13 @@ def get_default_confidence_rules() -> List[Dict[str, Any]]:
             "adjustment": -0.3,
             "reason": "WAV files are often sound effects or samples, not music",
         },
-        {"name": "TMDb match bonus", "condition": "tmdb_match", "value": True, "adjustment": 0.5, "reason": "TMDb match indicates legitimate media content"},
+        {
+            "name": "TMDb match bonus",
+            "condition": "tmdb_match",
+            "value": True,
+            "adjustment": 0.5,
+            "reason": "TMDb match indicates legitimate media content",
+        },
         {
             "name": "Single large video bonus",
             "condition": "single_large_video",

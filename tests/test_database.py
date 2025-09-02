@@ -2,7 +2,7 @@
 
 import tempfile
 from pathlib import Path
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -38,7 +38,9 @@ class TestDatabaseIntegration:
         # Test that tables are created
         # We can verify this by checking if basic operations work
         result = db.get_tmdb_cache("nonexistent")
-        assert result is None, "Database should return None for non-existent cache entry"
+        assert (
+            result is None
+        ), "Database should return None for non-existent cache entry"
 
         db.close()
 
@@ -126,11 +128,33 @@ class TestDatabaseIntegration:
         db = get_database(temp_db_path)
 
         # Add processing records
-        db.add_processing_record("/downloads/Movie.2020", "Movie.2020", "movie", 0.95, "/media/movies/Movie (2020)", "moved", {"tmdb_match": True})
+        db.add_processing_record(
+            "/downloads/Movie.2020",
+            "Movie.2020",
+            "movie",
+            0.95,
+            "/media/movies/Movie (2020)",
+            "moved",
+            {"tmdb_match": True},
+        )
 
-        db.add_processing_record("/downloads/Show.S01E01", "Show.S01E01", "tv", 0.45, action="skipped", details={"reason": "low_confidence"})
+        db.add_processing_record(
+            "/downloads/Show.S01E01",
+            "Show.S01E01",
+            "tv",
+            0.45,
+            action="skipped",
+            details={"reason": "low_confidence"},
+        )
 
-        db.add_processing_record("/downloads/Unknown.Stuff", "Unknown.Stuff", "unknown", 0.15, action="skipped", details={"reason": "unknown_media_type"})
+        db.add_processing_record(
+            "/downloads/Unknown.Stuff",
+            "Unknown.Stuff",
+            "unknown",
+            0.15,
+            action="skipped",
+            details={"reason": "unknown_media_type"},
+        )
 
         # Get history
         history = db.get_processing_history(10)
@@ -139,7 +163,9 @@ class TestDatabaseIntegration:
         # Verify record details
         if history:
             # Find the movie record
-            movie_record = next((r for r in history if r["media_type"] == "movie"), None)
+            movie_record = next(
+                (r for r in history if r["media_type"] == "movie"), None
+            )
             assert movie_record is not None
             assert movie_record["confidence"] == 0.95
             assert movie_record["action"] == "moved"
@@ -196,16 +222,25 @@ class TestDatabaseIntegration:
     @patch("mediamovarr.tmdb_client.requests.get")
     @patch("mediamovarr.database.MediaMovarrDB.get_tmdb_cache")
     @patch("mediamovarr.database.MediaMovarrDB.set_tmdb_cache")
-    def test_tmdb_database_integration(self, mock_set_cache, mock_get_cache, mock_get, temp_db_path, mock_config):
+    def test_tmdb_database_integration(
+        self, mock_set_cache, mock_get_cache, mock_get, temp_db_path, mock_config
+    ):
         """Test TMDb client with database caching."""
         from mediamovarr.tmdb_client import create_tmdb_client
 
         # Mock database cache - return None first (cache miss), then cached result
-        mock_get_cache.side_effect = [None, {"title": "Inception", "release_date": "2010-07-16", "id": 27205}]
+        mock_get_cache.side_effect = [
+            None,
+            {"title": "Inception", "release_date": "2010-07-16", "id": 27205},
+        ]
 
         # Mock TMDb API responses
         mock_response = MagicMock()
-        mock_response.json.return_value = {"results": [{"title": "Inception", "release_date": "2010-07-16", "id": 27205}]}
+        mock_response.json.return_value = {
+            "results": [
+                {"title": "Inception", "release_date": "2010-07-16", "id": 27205}
+            ]
+        }
         mock_response.status_code = 200
         mock_get.return_value = mock_response
 

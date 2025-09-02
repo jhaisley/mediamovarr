@@ -1,8 +1,9 @@
 """Tests for media classification patterns and fixes."""
 
-import pytest
 from pathlib import Path
 from unittest.mock import patch
+
+import pytest
 
 from mediamovarr.classify import classify_media
 
@@ -14,7 +15,12 @@ class TestClassificationPatterns:
     def mock_folder_info(self):
         """Mock folder info for consistent testing."""
         with patch("mediamovarr.classify.get_folder_info") as mock_info:
-            mock_info.return_value = (1, 0, 0, 3)  # video_files, audio_files, subdirs, total_files
+            mock_info.return_value = (
+                1,
+                0,
+                0,
+                3,
+            )  # video_files, audio_files, subdirs, total_files
             yield mock_info
 
     def test_tv_show_sxxexx_patterns(self, mock_folder_info):
@@ -32,7 +38,9 @@ class TestClassificationPatterns:
             media_type, confidence, _ = classify_media(folder_path)
 
             assert media_type == "tv", f"Failed to classify {folder_name} as TV show"
-            assert confidence >= 0.7, f"Low confidence for TV show {folder_name}: {confidence}"
+            assert (
+                confidence >= 0.7
+            ), f"Low confidence for TV show {folder_name}: {confidence}"
 
     def test_movie_classification_patterns(self, mock_folder_info):
         """Test that movies are still classified correctly."""
@@ -47,7 +55,9 @@ class TestClassificationPatterns:
             media_type, confidence, _ = classify_media(folder_path)
 
             assert media_type == "movie", f"Failed to classify {folder_name} as movie"
-            assert confidence >= 0.7, f"Low confidence for movie {folder_name}: {confidence}"
+            assert (
+                confidence >= 0.7
+            ), f"Low confidence for movie {folder_name}: {confidence}"
 
     def test_season_episode_pattern_detection(self, mock_folder_info):
         """Test specific season/episode pattern detection."""
@@ -65,7 +75,9 @@ class TestClassificationPatterns:
             media_type, confidence, _ = classify_media(folder_path)
 
             assert media_type == "tv", f"Failed to detect TV pattern: {pattern}"
-            assert confidence >= 0.8, f"Low confidence for pattern {pattern}: {confidence}"
+            assert (
+                confidence >= 0.8
+            ), f"Low confidence for pattern {pattern}: {confidence}"
 
     def test_case_insensitive_patterns(self, mock_folder_info):
         """Test that patterns work case-insensitively."""
@@ -79,8 +91,12 @@ class TestClassificationPatterns:
             folder_path = Path(folder_name)
             media_type, confidence, _ = classify_media(folder_path)
 
-            assert media_type == "tv", f"Failed case-insensitive classification: {folder_name}"
-            assert confidence >= 0.7, f"Low confidence for case variation {folder_name}: {confidence}"
+            assert (
+                media_type == "tv"
+            ), f"Failed case-insensitive classification: {folder_name}"
+            assert (
+                confidence >= 0.7
+            ), f"Low confidence for case variation {folder_name}: {confidence}"
 
     def test_tv_pattern_confidence_boost(self, mock_folder_info):
         """Test that TV patterns get appropriate confidence boost."""
@@ -93,7 +109,9 @@ class TestClassificationPatterns:
 
         assert generic_type == "tv"
         assert specific_type == "tv"
-        assert specific_conf >= generic_conf, "S##E## pattern should have higher confidence than generic season pattern"
+        assert (
+            specific_conf >= generic_conf
+        ), "S##E## pattern should have higher confidence than generic season pattern"
 
     def test_movie_pattern_penalty_for_tv_keywords(self, mock_folder_info):
         """Test that movie detection is penalized when TV patterns are present."""
@@ -101,8 +119,12 @@ class TestClassificationPatterns:
         ambiguous = Path("Movie.S01E01.1080p.BluRay")
         movie_type, movie_conf, _ = classify_media(ambiguous)
 
-        assert movie_type == "tv", "Should classify as TV when S##E## pattern is present"
-        assert movie_conf >= 0.8, f"Should have high confidence for TV pattern: {movie_conf}"
+        assert (
+            movie_type == "tv"
+        ), "Should classify as TV when S##E## pattern is present"
+        assert (
+            movie_conf >= 0.8
+        ), f"Should have high confidence for TV pattern: {movie_conf}"
 
     @pytest.mark.parametrize(
         "folder_name,expected_type,min_confidence",
@@ -113,13 +135,19 @@ class TestClassificationPatterns:
             ("Inception.(2010).720p.BluRay.x264-YIFY", "movie", 0.7),
         ],
     )
-    def test_parametrized_classification(self, mock_folder_info, folder_name, expected_type, min_confidence):
+    def test_parametrized_classification(
+        self, mock_folder_info, folder_name, expected_type, min_confidence
+    ):
         """Parametrized test for various classification scenarios."""
         folder_path = Path(folder_name)
         media_type, confidence, _ = classify_media(folder_path)
 
-        assert media_type == expected_type, f"Expected {expected_type}, got {media_type} for {folder_name}"
-        assert confidence >= min_confidence, f"Confidence too low for {folder_name}: {confidence}"
+        assert (
+            media_type == expected_type
+        ), f"Expected {expected_type}, got {media_type} for {folder_name}"
+        assert (
+            confidence >= min_confidence
+        ), f"Confidence too low for {folder_name}: {confidence}"
 
 
 if __name__ == "__main__":

@@ -2,11 +2,11 @@
 
 import logging
 import time
-from typing import Dict, Optional, Any
+from typing import Any, Dict, Optional
+
 import requests
 
 from .database import get_database
-
 
 logger = logging.getLogger(__name__)
 
@@ -16,7 +16,12 @@ class TMDbClient:
 
     BASE_URL = "https://api.themoviedb.org/3"
 
-    def __init__(self, api_key: str = "", read_access_token: str = "", db_path: str = "mediamovarr.db"):
+    def __init__(
+        self,
+        api_key: str = "",
+        read_access_token: str = "",
+        db_path: str = "mediamovarr.db",
+    ):
         """
         Initialize TMDb client.
 
@@ -28,7 +33,7 @@ class TMDbClient:
         self.api_key = api_key
         self.read_access_token = read_access_token
         self.db = get_database(db_path)
-        self.last_request_time = 0
+        self.last_request_time = 0.0
         self.rate_limit_delay = 0.25  # 4 requests per second max
 
         if not api_key and not read_access_token:
@@ -65,7 +70,9 @@ class TMDbClient:
                 time.sleep(2)
                 return None
             else:
-                logger.warning(f"TMDb API error {response.status_code}: {response.text}")
+                logger.warning(
+                    f"TMDb API error {response.status_code}: {response.text}"
+                )
                 return None
 
         except requests.RequestException as e:
@@ -102,7 +109,9 @@ class TMDbClient:
             # Return the first result
             movie = result["results"][0]
             self.db.set_tmdb_cache(cache_key, "movie", title, year, movie)
-            logger.info(f"Found movie: {movie.get('title')} ({movie.get('release_date', 'Unknown year')[:4]})")
+            logger.info(
+                f"Found movie: {movie.get('title')} ({movie.get('release_date', 'Unknown year')[:4]})"
+            )
             return movie
 
         logger.info(f"Movie not found: {title}")
@@ -139,7 +148,9 @@ class TMDbClient:
             # Return the first result
             show = result["results"][0]
             self.db.set_tmdb_cache(cache_key, "tv", title, year, show)
-            logger.info(f"Found TV show: {show.get('name')} ({show.get('first_air_date', 'Unknown year')[:4]})")
+            logger.info(
+                f"Found TV show: {show.get('name')} ({show.get('first_air_date', 'Unknown year')[:4]})"
+            )
             return show
 
         logger.info(f"TV show not found: {title}")
@@ -168,12 +179,16 @@ class TMDbClient:
         result = self._make_request(f"tv/{tv_id}/season/{season_number}", {})
 
         if result:
-            self.db.set_tmdb_cache(cache_key, "season", f"TV {tv_id}", season_number, result)
+            self.db.set_tmdb_cache(
+                cache_key, "season", f"TV {tv_id}", season_number, result
+            )
             return result
 
         return None
 
-    def normalize_movie_title(self, title: str, year: Optional[int] = None) -> tuple[str, Optional[int]]:
+    def normalize_movie_title(
+        self, title: str, year: Optional[int] = None
+    ) -> tuple[str, Optional[int]]:
         """
         Normalize movie title using TMDb data.
 
@@ -201,7 +216,9 @@ class TMDbClient:
 
         return title, year
 
-    def normalize_tv_title(self, title: str, year: Optional[int] = None) -> tuple[str, Optional[int]]:
+    def normalize_tv_title(
+        self, title: str, year: Optional[int] = None
+    ) -> tuple[str, Optional[int]]:
         """
         Normalize TV show title using TMDb data.
 
@@ -230,7 +247,9 @@ class TMDbClient:
         return title, year
 
 
-def create_tmdb_client(config: Dict[str, Any], db_path: str = "mediamovarr.db") -> Optional[TMDbClient]:
+def create_tmdb_client(
+    config: Dict[str, Any], db_path: str = "mediamovarr.db"
+) -> Optional[TMDbClient]:
     """
     Create TMDb client from configuration.
 
@@ -251,4 +270,6 @@ def create_tmdb_client(config: Dict[str, Any], db_path: str = "mediamovarr.db") 
         logger.warning("TMDb enabled but no credentials provided")
         return None
 
-    return TMDbClient(api_key=api_key, read_access_token=read_access_token, db_path=db_path)
+    return TMDbClient(
+        api_key=api_key, read_access_token=read_access_token, db_path=db_path
+    )

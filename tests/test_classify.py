@@ -1,10 +1,16 @@
 """Tests for media classification logic."""
 
-import pytest
 from pathlib import Path
 from unittest.mock import patch
 
-from mediamovarr.classify import classify_media, MediaType, _detect_tv_show, _detect_movie
+import pytest
+
+from mediamovarr.classify import (
+    MediaType,
+    _detect_movie,
+    _detect_tv_show,
+    classify_media,
+)
 
 
 class TestMediaClassification:
@@ -14,7 +20,12 @@ class TestMediaClassification:
         """Test TV show detection with various patterns."""
         # Test with season folders
         with patch("mediamovarr.classify.get_folder_info") as mock_info:
-            mock_info.return_value = (10, 0, 3, 15)  # video_files, audio_files, subdirs, total_files
+            mock_info.return_value = (
+                10,
+                0,
+                3,
+                15,
+            )  # video_files, audio_files, subdirs, total_files
 
             # Season in folder name
             folder_path = Path("The Office Season 01")
@@ -67,7 +78,9 @@ class TestMediaClassification:
 
             # With current logic, low-confidence items may be classified as movie
             # Just verify it's not a high-confidence classification
-            assert confidence < 0.5, f"Unexpectedly high confidence for unknown content: {confidence}"
+            assert (
+                confidence < 0.5
+            ), f"Unexpectedly high confidence for unknown content: {confidence}"
 
     def test_tv_show_patterns(self):
         """Test specific TV show naming patterns."""
@@ -80,7 +93,13 @@ class TestMediaClassification:
         ]
 
         for folder_name, expected_tv in test_cases:
-            confidence = _detect_tv_show(Path(folder_name), folder_name.lower(), video_files=5, audio_files=0, subdirs=2)
+            confidence = _detect_tv_show(
+                Path(folder_name),
+                folder_name.lower(),
+                video_files=5,
+                audio_files=0,
+                subdirs=2,
+            )
 
             if expected_tv:
                 assert confidence > 0.3, f"Failed for TV show: {folder_name}"
@@ -97,7 +116,13 @@ class TestMediaClassification:
         ]
 
         for folder_name, expected_movie in test_cases:
-            confidence = _detect_movie(Path(folder_name), folder_name.lower(), video_files=1, audio_files=0, subdirs=0)
+            confidence = _detect_movie(
+                Path(folder_name),
+                folder_name.lower(),
+                video_files=1,
+                audio_files=0,
+                subdirs=0,
+            )
 
             if expected_movie:
                 assert confidence > 0.5, f"Failed for movie: {folder_name}"

@@ -33,7 +33,7 @@ We should support multiple scan dirs, and include C:\Downloads and %USERPROFILE%
 
 ```json
 {
-  "scan_dir": "C:\\Downloads", 
+  "scan_dir": "C:\\Downloads",
   "dest_dir": "D:\\Media",
   "tmdb_enabled": true,
   "tmdb_api_key": "56129363bc29f103b8b87884368b05f8"

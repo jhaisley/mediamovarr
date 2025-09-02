@@ -4,8 +4,7 @@ import json
 import logging
 import sqlite3
 from pathlib import Path
-from typing import Dict, List, Optional, Any
-
+from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -47,7 +46,8 @@ class MediaMovarrDB:
         cursor = self.connection.cursor()
 
         # TMDb cache table
-        cursor.execute("""
+        cursor.execute(
+            """
             CREATE TABLE IF NOT EXISTS tmdb_cache (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 cache_key TEXT UNIQUE NOT NULL,
@@ -58,10 +58,12 @@ class MediaMovarrDB:
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 last_accessed TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
-        """)
+        """
+        )
 
         # User exclusions table
-        cursor.execute("""
+        cursor.execute(
+            """
             CREATE TABLE IF NOT EXISTS user_exclusions (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 folder_path TEXT UNIQUE NOT NULL,
@@ -71,10 +73,12 @@ class MediaMovarrDB:
                 excluded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 reason TEXT  -- Optional user-provided reason
             )
-        """)
+        """
+        )
 
         # Processing history table (for tracking what was moved)
-        cursor.execute("""
+        cursor.execute(
+            """
             CREATE TABLE IF NOT EXISTS processing_history (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 folder_path TEXT NOT NULL,
@@ -86,13 +90,22 @@ class MediaMovarrDB:
                 processed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 details TEXT  -- JSON string with additional details
             )
-        """)
+        """
+        )
 
         # Create indexes for better performance
-        cursor.execute("CREATE INDEX IF NOT EXISTS idx_tmdb_cache_key ON tmdb_cache(cache_key)")
-        cursor.execute("CREATE INDEX IF NOT EXISTS idx_user_exclusions_path ON user_exclusions(folder_path)")
-        cursor.execute("CREATE INDEX IF NOT EXISTS idx_processing_history_path ON processing_history(folder_path)")
-        cursor.execute("CREATE INDEX IF NOT EXISTS idx_processing_history_date ON processing_history(processed_at)")
+        cursor.execute(
+            "CREATE INDEX IF NOT EXISTS idx_tmdb_cache_key ON tmdb_cache(cache_key)"
+        )
+        cursor.execute(
+            "CREATE INDEX IF NOT EXISTS idx_user_exclusions_path ON user_exclusions(folder_path)"
+        )
+        cursor.execute(
+            "CREATE INDEX IF NOT EXISTS idx_processing_history_path ON processing_history(folder_path)"
+        )
+        cursor.execute(
+            "CREATE INDEX IF NOT EXISTS idx_processing_history_date ON processing_history(processed_at)"
+        )
 
         self.connection.commit()
         logger.debug("Database tables created/verified")
@@ -129,7 +142,7 @@ class MediaMovarrDB:
         cursor = self.connection.cursor()
         cursor.execute(
             """
-            SELECT result_data FROM tmdb_cache 
+            SELECT result_data FROM tmdb_cache
             WHERE cache_key = ?
         """,
             (cache_key,),
@@ -140,8 +153,8 @@ class MediaMovarrDB:
             # Update last accessed time
             cursor.execute(
                 """
-                UPDATE tmdb_cache 
-                SET last_accessed = CURRENT_TIMESTAMP 
+                UPDATE tmdb_cache
+                SET last_accessed = CURRENT_TIMESTAMP
                 WHERE cache_key = ?
             """,
                 (cache_key,),
@@ -162,7 +175,14 @@ class MediaMovarrDB:
 
         return None
 
-    def set_tmdb_cache(self, cache_key: str, search_type: str, title: str, year: Optional[int], result: Optional[Dict[str, Any]]):
+    def set_tmdb_cache(
+        self,
+        cache_key: str,
+        search_type: str,
+        title: str,
+        year: Optional[int],
+        result: Optional[Dict[str, Any]],
+    ):
         """
         Store TMDb result in cache.
 
@@ -181,7 +201,7 @@ class MediaMovarrDB:
         cursor = self.connection.cursor()
         cursor.execute(
             """
-            INSERT OR REPLACE INTO tmdb_cache 
+            INSERT OR REPLACE INTO tmdb_cache
             (cache_key, search_type, title, year, result_data, created_at, last_accessed)
             VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
         """,
@@ -203,10 +223,10 @@ class MediaMovarrDB:
 
         cursor = self.connection.cursor()
         cursor.execute(
-            """
-            DELETE FROM tmdb_cache 
-            WHERE last_accessed < datetime('now', '-{} days')
-        """.format(days)
+            f"""
+            DELETE FROM tmdb_cache
+            WHERE last_accessed < datetime('now', '-{days} days')
+        """
         )
 
         deleted_count = cursor.rowcount
@@ -231,11 +251,18 @@ class MediaMovarrDB:
             return False
 
         cursor = self.connection.cursor()
-        cursor.execute("SELECT 1 FROM user_exclusions WHERE folder_path = ?", (str(folder_path),))
+        cursor.execute(
+            "SELECT 1 FROM user_exclusions WHERE folder_path = ?", (str(folder_path),)
+        )
         return cursor.fetchone() is not None
 
     def add_exclusion(
-        self, folder_path: str, folder_name: str, media_type: Optional[str] = None, confidence: Optional[float] = None, reason: Optional[str] = None
+        self,
+        folder_path: str,
+        folder_name: str,
+        media_type: Optional[str] = None,
+        confidence: Optional[float] = None,
+        reason: Optional[str] = None,
     ):
         """
         Add folder to user exclusions.
@@ -253,7 +280,7 @@ class MediaMovarrDB:
         cursor = self.connection.cursor()
         cursor.execute(
             """
-            INSERT OR REPLACE INTO user_exclusions 
+            INSERT OR REPLACE INTO user_exclusions
             (folder_path, folder_name, media_type, confidence, excluded_at, reason)
             VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, ?)
         """,
@@ -274,7 +301,9 @@ class MediaMovarrDB:
             return
 
         cursor = self.connection.cursor()
-        cursor.execute("DELETE FROM user_exclusions WHERE folder_path = ?", (str(folder_path),))
+        cursor.execute(
+            "DELETE FROM user_exclusions WHERE folder_path = ?", (str(folder_path),)
+        )
 
         if cursor.rowcount > 0:
             self.connection.commit()
@@ -291,11 +320,13 @@ class MediaMovarrDB:
             return []
 
         cursor = self.connection.cursor()
-        cursor.execute("""
+        cursor.execute(
+            """
             SELECT folder_path, folder_name, media_type, confidence, excluded_at, reason
-            FROM user_exclusions 
+            FROM user_exclusions
             ORDER BY excluded_at DESC
-        """)
+        """
+        )
 
         return [dict(row) for row in cursor.fetchall()]
 
@@ -331,11 +362,19 @@ class MediaMovarrDB:
         cursor = self.connection.cursor()
         cursor.execute(
             """
-            INSERT INTO processing_history 
+            INSERT INTO processing_history
             (folder_path, folder_name, media_type, confidence, destination_path, action, processed_at, details)
             VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, ?)
         """,
-            (str(folder_path), folder_name, media_type, confidence, destination_path, action, details_json),
+            (
+                str(folder_path),
+                folder_name,
+                media_type,
+                confidence,
+                destination_path,
+                action,
+                details_json,
+            ),
         )
 
         self.connection.commit()
@@ -356,10 +395,10 @@ class MediaMovarrDB:
         cursor = self.connection.cursor()
         cursor.execute(
             """
-            SELECT folder_path, folder_name, media_type, confidence, destination_path, 
+            SELECT folder_path, folder_name, media_type, confidence, destination_path,
                    action, processed_at, details
-            FROM processing_history 
-            ORDER BY processed_at DESC 
+            FROM processing_history
+            ORDER BY processed_at DESC
             LIMIT ?
         """,
             (limit,),
@@ -389,10 +428,10 @@ class MediaMovarrDB:
 
         cursor = self.connection.cursor()
         cursor.execute(
-            """
-            DELETE FROM processing_history 
-            WHERE processed_at < datetime('now', '-{} days')
-        """.format(days)
+            f"""
+            DELETE FROM processing_history
+            WHERE processed_at < datetime('now', '-{days} days')
+        """
         )
 
         deleted_count = cursor.rowcount

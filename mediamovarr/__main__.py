@@ -6,17 +6,19 @@ from pathlib import Path
 
 import click
 
-from .config import load_config, ConfigError
-from .discovery import scan_for_media_folders
-from .classify import classify_media, MediaType
-from .renamer import get_renamed_path
-from .mover import move_media, MoveResult
+from .classify import MediaType, classify_media
 from .confidence_rules import apply_confidence_rules
-from .tmdb_client import create_tmdb_client
+from .config import ConfigError, load_config
 from .database import get_database
+from .discovery import scan_for_media_folders
+from .mover import MoveResult, move_media
+from .renamer import get_renamed_path
+from .tmdb_client import create_tmdb_client
 
 
-def get_user_confirmation(folder_path: Path, media_type: str, confidence: float, dest_path: Path) -> str:
+def get_user_confirmation(
+    folder_path: Path, media_type: str, confidence: float, dest_path: Path
+) -> str:
     """
     Ask user for confirmation to move a media folder.
 
@@ -35,7 +37,9 @@ def get_user_confirmation(folder_path: Path, media_type: str, confidence: float,
     print(f"   Would move to: {dest_path}")
 
     while True:
-        response = input("   Proceed? (y/n/s=skip all/e=exclude forever): ").lower().strip()
+        response = (
+            input("   Proceed? (y/n/s=skip all/e=exclude forever): ").lower().strip()
+        )
         if response in ["y", "yes"]:
             return "y"
         elif response in ["n", "no"]:
@@ -47,13 +51,19 @@ def get_user_confirmation(folder_path: Path, media_type: str, confidence: float,
             print("   Adding to exclusion list...")
             return "e"
         else:
-            print("   Please enter 'y' for yes, 'n' for no, 's' to skip all, or 'e' to exclude forever")
+            print(
+                "   Please enter 'y' for yes, 'n' for no, 's' to skip all, or 'e' to exclude forever"
+            )
 
 
 def setup_logging(verbose: bool) -> None:
     """Setup logging configuration."""
     level = logging.DEBUG if verbose else logging.INFO
-    logging.basicConfig(level=level, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", handlers=[logging.StreamHandler(sys.stdout)])
+    logging.basicConfig(
+        level=level,
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+        handlers=[logging.StreamHandler(sys.stdout)],
+    )
 
 
 def run_prechecks(config_path: str, config_data: dict) -> bool:
@@ -76,7 +86,9 @@ def run_prechecks(config_path: str, config_data: dict) -> bool:
     config_file = Path(config_path)
     if not config_file.exists():
         logger.error(f"❌ Configuration file not found: {config_path}")
-        logger.error("   Please create a config.json file or specify a different path with --config")
+        logger.error(
+            "   Please create a config.json file or specify a different path with --config"
+        )
         return False
     logger.info("✅ Configuration file exists")
 
@@ -124,10 +136,16 @@ def run_prechecks(config_path: str, config_data: dict) -> bool:
 
     # Check 5: TMDb configuration if enabled
     if config_data.get("tmdb_enabled"):
-        tmdb_api_key = config_data.get("tmdb_api_key") or config_data.get("tmdb_read_access_token")
+        tmdb_api_key = config_data.get("tmdb_api_key") or config_data.get(
+            "tmdb_read_access_token"
+        )
         if not tmdb_api_key:
-            logger.error("❌ TMDb is enabled but no API key or read access token provided")
-            logger.error("   Add 'tmdb_api_key' or 'tmdb_read_access_token' to your config")
+            logger.error(
+                "❌ TMDb is enabled but no API key or read access token provided"
+            )
+            logger.error(
+                "   Add 'tmdb_api_key' or 'tmdb_read_access_token' to your config"
+            )
             checks_passed = False
         else:
             logger.info("✅ TMDb credentials configured")
@@ -152,12 +170,30 @@ def run_prechecks(config_path: str, config_data: dict) -> bool:
 
 @click.command()
 @click.option("--config", "-c", default="config.json", help="Configuration file path")
-@click.option("--dry-run", "-n", is_flag=True, help="Show what would be done without making changes")
+@click.option(
+    "--dry-run",
+    "-n",
+    is_flag=True,
+    help="Show what would be done without making changes",
+)
 @click.option("--verbose", "-v", is_flag=True, help="Enable verbose output")
 @click.option("--force", "-f", is_flag=True, help="Force overwrite existing files")
-@click.option("--no-interactive", is_flag=True, help="Disable user confirmations (auto-skip medium confidence items)")
-@click.option("--skip-prechecks", is_flag=True, help="Skip pre-flight validation checks")
-def main(config: str, dry_run: bool, verbose: bool, force: bool, no_interactive: bool, skip_prechecks: bool) -> None:
+@click.option(
+    "--no-interactive",
+    is_flag=True,
+    help="Disable user confirmations (auto-skip medium confidence items)",
+)
+@click.option(
+    "--skip-prechecks", is_flag=True, help="Skip pre-flight validation checks"
+)
+def main(
+    config: str,
+    dry_run: bool,
+    verbose: bool,
+    force: bool,
+    no_interactive: bool,
+    skip_prechecks: bool,
+) -> None:
     """
     MediaMovarr - Organize downloaded media files according to Plex guidelines.
 
@@ -197,7 +233,13 @@ def main(config: str, dry_run: bool, verbose: bool, force: bool, no_interactive:
         for folder_path in media_folders:
             try:
                 results["processed"] += 1
-                result = process_media_folder(folder_path, config_data, dry_run=dry_run, force=force, interactive=not no_interactive)
+                result = process_media_folder(
+                    folder_path,
+                    config_data,
+                    dry_run=dry_run,
+                    force=force,
+                    interactive=not no_interactive,
+                )
 
                 if result == MoveResult.SUCCESS:
                     results["moved"] += 1
@@ -233,7 +275,13 @@ def main(config: str, dry_run: bool, verbose: bool, force: bool, no_interactive:
         sys.exit(1)
 
 
-def process_media_folder(folder_path: Path, config: dict, dry_run: bool = False, force: bool = False, interactive: bool = True) -> MoveResult:
+def process_media_folder(
+    folder_path: Path,
+    config: dict,
+    dry_run: bool = False,
+    force: bool = False,
+    interactive: bool = True,
+) -> MoveResult:
     """
     Process a single media folder.
 
@@ -270,11 +318,20 @@ def process_media_folder(folder_path: Path, config: dict, dry_run: bool = False,
 
     if media_type == MediaType.UNKNOWN:
         logger.warning("  Skipping unknown media type")
-        db.add_processing_record(str(folder_path), folder_path.name, "unknown", 0.0, action="skipped", details={"reason": "unknown_media_type"})
+        db.add_processing_record(
+            str(folder_path),
+            folder_path.name,
+            "unknown",
+            0.0,
+            action="skipped",
+            details={"reason": "unknown_media_type"},
+        )
         return MoveResult.SKIPPED
 
     # Apply confidence rules
-    confidence, applied_rules = apply_confidence_rules(folder_path, base_confidence, media_type, config, tmdb_match)
+    confidence, applied_rules = apply_confidence_rules(
+        folder_path, base_confidence, media_type, config, tmdb_match
+    )
 
     if applied_rules:
         logger.info(f"  Applied rules: {', '.join(applied_rules)}")
@@ -283,15 +340,26 @@ def process_media_folder(folder_path: Path, config: dict, dry_run: bool = False,
         logger.info(f"  Final confidence: {confidence:.2f} (no rules applied)")
 
     # Get confidence thresholds from config
-    thresholds = config.get("confidence_thresholds", {"auto_process": 0.9, "require_confirmation": 0.5})
+    thresholds = config.get(
+        "confidence_thresholds", {"auto_process": 0.9, "require_confirmation": 0.5}
+    )
 
     auto_threshold = thresholds["auto_process"]
     confirm_threshold = thresholds["require_confirmation"]
 
     # Check confidence levels
     if confidence < confirm_threshold:
-        logger.warning(f"  Confidence too low ({confidence:.2f} < {confirm_threshold:.2f}), skipping")
-        db.add_processing_record(str(folder_path), folder_path.name, media_type, confidence, action="skipped", details={"reason": "low_confidence"})
+        logger.warning(
+            f"  Confidence too low ({confidence:.2f} < {confirm_threshold:.2f}), skipping"
+        )
+        db.add_processing_record(
+            str(folder_path),
+            folder_path.name,
+            media_type,
+            confidence,
+            action="skipped",
+            details={"reason": "low_confidence"},
+        )
         return MoveResult.SKIPPED
 
     # Get destination path
@@ -299,7 +367,14 @@ def process_media_folder(folder_path: Path, config: dict, dry_run: bool = False,
 
     if dest_path is None:
         logger.warning("  Could not determine destination path")
-        db.add_processing_record(str(folder_path), folder_path.name, media_type, confidence, action="error", details={"reason": "no_destination_path"})
+        db.add_processing_record(
+            str(folder_path),
+            folder_path.name,
+            media_type,
+            confidence,
+            action="error",
+            details={"reason": "no_destination_path"},
+        )
         return MoveResult.ERROR
 
     logger.info(f"  Destination: {dest_path}")
@@ -309,10 +384,18 @@ def process_media_folder(folder_path: Path, config: dict, dry_run: bool = False,
 
     if needs_confirmation and not dry_run:
         if interactive:
-            user_response = get_user_confirmation(folder_path, media_type, confidence, dest_path)
+            user_response = get_user_confirmation(
+                folder_path, media_type, confidence, dest_path
+            )
             if user_response == "e":
                 # Add to exclusions
-                db.add_exclusion(str(folder_path), folder_path.name, media_type, confidence, "User excluded during processing")
+                db.add_exclusion(
+                    str(folder_path),
+                    folder_path.name,
+                    media_type,
+                    confidence,
+                    "User excluded during processing",
+                )
                 logger.info("  Added to exclusions list")
                 return MoveResult.SKIPPED
             elif user_response == "s":
@@ -321,12 +404,26 @@ def process_media_folder(folder_path: Path, config: dict, dry_run: bool = False,
                 return MoveResult.SKIPPED
             elif user_response != "y":
                 logger.info("  User declined to move folder")
-                db.add_processing_record(str(folder_path), folder_path.name, media_type, confidence, action="skipped", details={"reason": "user_declined"})
+                db.add_processing_record(
+                    str(folder_path),
+                    folder_path.name,
+                    media_type,
+                    confidence,
+                    action="skipped",
+                    details={"reason": "user_declined"},
+                )
                 return MoveResult.SKIPPED
         else:
-            logger.info(f"  Medium confidence ({confidence:.2f}) - skipping in non-interactive mode")
+            logger.info(
+                f"  Medium confidence ({confidence:.2f}) - skipping in non-interactive mode"
+            )
             db.add_processing_record(
-                str(folder_path), folder_path.name, media_type, confidence, action="skipped", details={"reason": "non_interactive_medium_confidence"}
+                str(folder_path),
+                folder_path.name,
+                media_type,
+                confidence,
+                action="skipped",
+                details={"reason": "non_interactive_medium_confidence"},
             )
             return MoveResult.SKIPPED
 
@@ -345,10 +442,25 @@ def process_media_folder(folder_path: Path, config: dict, dry_run: bool = False,
 
     # Record the processing result in database
     if move_result == MoveResult.SUCCESS:
-        db.add_processing_record(str(folder_path), folder_path.name, media_type, confidence, str(dest_path), "moved", {"tmdb_match": tmdb_match})
+        db.add_processing_record(
+            str(folder_path),
+            folder_path.name,
+            media_type,
+            confidence,
+            str(dest_path),
+            "moved",
+            {"tmdb_match": tmdb_match},
+        )
         logger.info("  Move completed successfully")
     else:
-        db.add_processing_record(str(folder_path), folder_path.name, media_type, confidence, action="error", details={"reason": "move_failed"})
+        db.add_processing_record(
+            str(folder_path),
+            folder_path.name,
+            media_type,
+            confidence,
+            action="error",
+            details={"reason": "move_failed"},
+        )
         logger.error("  Move failed")
 
     return move_result

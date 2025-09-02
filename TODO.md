@@ -5,11 +5,11 @@
 ### Phase 1 - Project Setup
 
 - [x] Created package structure with `mediamovarr/` module
-- [x] Implemented configuration loading with JSON validation  
+- [x] Implemented configuration loading with JSON validation
 - [x] Added CLI entry point with Click framework
 - [x] Created `pyproject.toml` and `requirements.txt`
 
-### Phase 2 - Discovery & Classification  
+### Phase 2 - Discovery & Classification
 
 - [x] Implemented media folder discovery with depth limiting
 - [x] Created media type classification (TV, Movie, Music, Audiobook)
@@ -77,7 +77,7 @@ The MediaMovarr CLI is now fully functional with all planned features implemente
 - [ ] Duplicate detection and handling
 - [ ] Network drive optimization
 
-### Advanced Features  
+### Advanced Features
 
 - [ ] Machine learning for improved classification
 - [ ] Fuzzy string matching for title normalization

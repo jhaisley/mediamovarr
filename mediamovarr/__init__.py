@@ -2,16 +2,18 @@
 
 __version__ = "1.0.0"
 __author__ = "MediaMovarr Team"
-__description__ = "CLI tool to organize downloaded media files according to Plex guidelines"
+__description__ = (
+    "CLI tool to organize downloaded media files according to Plex guidelines"
+)
 
-from .config import load_config, ConfigError
-from .classify import classify_media, MediaType
-from .discovery import scan_for_media_folders
-from .renamer import get_renamed_path
-from .mover import move_media, MoveResult
-from .tmdb_client import TMDbClient, create_tmdb_client
+from .classify import MediaType, classify_media
 from .confidence_rules import apply_confidence_rules, get_default_confidence_rules
+from .config import ConfigError, load_config
 from .database import MediaMovarrDB, get_database
+from .discovery import scan_for_media_folders
+from .mover import MoveResult, move_media
+from .renamer import get_renamed_path
+from .tmdb_client import TMDbClient, create_tmdb_client
 
 __all__ = [
     "load_config",

@@ -5,8 +5,8 @@ from pathlib import Path
 
 import pytest
 
+from mediamovarr.classify import MediaType, classify_media
 from mediamovarr.config import get_default_config
-from mediamovarr.classify import classify_media, MediaType
 from mediamovarr.renamer import get_renamed_path
 
 
@@ -20,7 +20,11 @@ class TestIntegration:
             temp_path = Path(temp_dir)
 
             # Create test config
-            config = {"scan_dirs": [str(temp_path / "downloads")], "dest_dir": str(temp_path / "media"), "tmdb_enabled": False}
+            config = {
+                "scan_dirs": [str(temp_path / "downloads")],
+                "dest_dir": str(temp_path / "media"),
+                "tmdb_enabled": False,
+            }
 
             # Create test media folders
             downloads_dir = temp_path / "downloads"
@@ -66,8 +70,12 @@ class TestIntegration:
         expected_tv_dest = temp_path / "media" / "TV Shows" / "The Office" / "Season 01"
         expected_movie_dest = temp_path / "media" / "Movies" / "Inception (2010)"
 
-        assert tv_dest == expected_tv_dest, f"TV destination mismatch: {tv_dest} != {expected_tv_dest}"
-        assert movie_dest == expected_movie_dest, f"Movie destination mismatch: {movie_dest} != {expected_movie_dest}"
+        assert (
+            tv_dest == expected_tv_dest
+        ), f"TV destination mismatch: {tv_dest} != {expected_tv_dest}"
+        assert (
+            movie_dest == expected_movie_dest
+        ), f"Movie destination mismatch: {movie_dest} != {expected_movie_dest}"
 
     def test_end_to_end_workflow(self, temp_media_structure):
         """Test complete workflow from classification to destination."""
@@ -91,7 +99,9 @@ class TestIntegration:
 
             # Get destination
             dest_path = get_renamed_path(folder_path, media_type, config)
-            assert dest_path is not None, f"get_renamed_path returned None for {folder_path}"
+            assert (
+                dest_path is not None
+            ), f"get_renamed_path returned None for {folder_path}"
 
             expected_path = media_dir / expected_relative_path
             assert dest_path == expected_path
@@ -108,7 +118,12 @@ class TestIntegration:
         assert "dest_dir" in default_config
 
         # Test that required keys exist
-        required_keys = ["scan_dirs", "dest_dir", "tmdb_enabled", "confidence_thresholds"]
+        required_keys = [
+            "scan_dirs",
+            "dest_dir",
+            "tmdb_enabled",
+            "confidence_thresholds",
+        ]
         for key in required_keys:
             assert key in default_config, f"Missing required config key: {key}"
 

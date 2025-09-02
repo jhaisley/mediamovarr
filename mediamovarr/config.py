@@ -3,7 +3,7 @@
 import json
 import os
 from pathlib import Path
-from typing import Dict, Any
+from typing import Any, Dict
 
 
 class ConfigError(Exception):
@@ -26,10 +26,10 @@ def load_config(config_path: str = "config.json") -> Dict[str, Any]:
         raise ConfigError(f"Config file not found: {config_path}")
 
     try:
-        with open(config_file, "r", encoding="utf-8") as f:
+        with open(config_file, encoding="utf-8") as f:
             config = json.load(f)
     except json.JSONDecodeError as e:
-        raise ConfigError(f"Invalid JSON in config file: {e}")
+        raise ConfigError(f"Invalid JSON in config file: {e}") from e
 
     # Validate required fields
     required_fields = ["scan_dirs", "dest_dir"]
@@ -56,13 +56,17 @@ def load_config(config_path: str = "config.json") -> Dict[str, Any]:
         try:
             dest_path.mkdir(parents=True, exist_ok=True)
         except OSError as e:
-            raise ConfigError(f"Cannot create destination directory {config['dest_dir']}: {e}")
+            raise ConfigError(
+                f"Cannot create destination directory {config['dest_dir']}: {e}"
+            ) from e
 
     # Set defaults
     config.setdefault("tmdb_enabled", False)
     config.setdefault("verbose", False)
     config.setdefault("rules", {})
-    config.setdefault("confidence_thresholds", {"auto_process": 0.9, "require_confirmation": 0.5})
+    config.setdefault(
+        "confidence_thresholds", {"auto_process": 0.9, "require_confirmation": 0.5}
+    )
 
     # Set default confidence rules if not provided
     if "confidence_rules" not in config:
@@ -72,17 +76,27 @@ def load_config(config_path: str = "config.json") -> Dict[str, Any]:
 
     # Validate confidence thresholds
     thresholds = config["confidence_thresholds"]
-    if not isinstance(thresholds.get("auto_process"), (int, float)) or not (0 <= thresholds["auto_process"] <= 1):
+    if not isinstance(thresholds.get("auto_process"), (int, float)) or not (
+        0 <= thresholds["auto_process"] <= 1
+    ):
         raise ConfigError("auto_process threshold must be a number between 0 and 1")
-    if not isinstance(thresholds.get("require_confirmation"), (int, float)) or not (0 <= thresholds["require_confirmation"] <= 1):
-        raise ConfigError("require_confirmation threshold must be a number between 0 and 1")
+    if not isinstance(thresholds.get("require_confirmation"), (int, float)) or not (
+        0 <= thresholds["require_confirmation"] <= 1
+    ):
+        raise ConfigError(
+            "require_confirmation threshold must be a number between 0 and 1"
+        )
     if thresholds["auto_process"] < thresholds["require_confirmation"]:
-        raise ConfigError("auto_process threshold must be >= require_confirmation threshold")
+        raise ConfigError(
+            "auto_process threshold must be >= require_confirmation threshold"
+        )
 
     # Validate TMDb settings
     if config.get("tmdb_enabled"):
         if not config.get("tmdb_api_key") and not config.get("tmdb_read_access_token"):
-            raise ConfigError("TMDb enabled but no API key or read access token provided")
+            raise ConfigError(
+                "TMDb enabled but no API key or read access token provided"
+            )
 
     return config
 

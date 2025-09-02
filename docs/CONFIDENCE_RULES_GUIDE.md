@@ -29,7 +29,7 @@ Each rule in `config.json` has this structure:
 
 ```json
 {
-  "name": "WAV files penalty", 
+  "name": "WAV files penalty",
   "condition": "filetype",
   "value": "wav",
   "adjustment": -0.3,
@@ -44,7 +44,7 @@ Checks if the folder contains files with the specified extension.
 ```json
 {
   "name": "TMDb match bonus",
-  "condition": "tmdb_match", 
+  "condition": "tmdb_match",
   "value": true,
   "adjustment": 0.5,
   "reason": "TMDb match indicates legitimate media"
@@ -59,7 +59,7 @@ Triggers when TMDb finds (or doesn't find) a match for the content.
 {
   "name": "Single large video bonus",
   "condition": "single_large_video",
-  "value": true, 
+  "value": true,
   "adjustment": 0.2,
   "reason": "Single large video file likely indicates a movie"
 }
@@ -77,7 +77,7 @@ Available structure conditions:
 {
   "name": "Too many audio files",
   "condition": "audio_file_count",
-  "value": ">50", 
+  "value": ">50",
   "adjustment": -0.4,
   "reason": "Too many files might be a sample collection"
 }
@@ -109,7 +109,7 @@ Available name conditions:
 ```json
 {
   "name": "System folder penalty",
-  "condition": "folder_name_contains", 
+  "condition": "folder_name_contains",
   "value": ["system", "windows", "program", "$recycle"],
   "adjustment": -0.8,
   "reason": "System folders should never be processed as media"
@@ -167,14 +167,14 @@ While each rule is independent, you can create multiple rules that work together
     "adjustment": 0.1
   },
   {
-    "name": "BluRay source bonus", 
+    "name": "BluRay source bonus",
     "condition": "folder_name_contains",
     "value": ["bluray", "blu-ray"],
     "adjustment": 0.15
   },
   {
     "name": "Web source penalty",
-    "condition": "folder_name_contains", 
+    "condition": "folder_name_contains",
     "value": ["webrip", "web-dl"],
     "adjustment": -0.05
   }

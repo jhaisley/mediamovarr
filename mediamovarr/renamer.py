@@ -1,17 +1,18 @@
 """File and folder renaming according to Plex guidelines."""
 
-import re
 import logging
+import re
 from pathlib import Path
-from typing import Optional, Dict, Any, Tuple
+from typing import Any, Dict, Optional, Tuple
 
 from .classify import MediaType
-
 
 logger = logging.getLogger(__name__)
 
 
-def get_renamed_path(folder_path: Path, media_type: str, config: Dict[str, Any]) -> Optional[Path]:
+def get_renamed_path(
+    folder_path: Path, media_type: str, config: Dict[str, Any]
+) -> Optional[Path]:
     """
     Generate the destination path for a media folder based on Plex guidelines.
 
@@ -106,7 +107,9 @@ def _rename_music(folder_path: Path, dest_dir: Path, config: Dict[str, Any]) -> 
     return album_dir
 
 
-def _rename_audiobook(folder_path: Path, dest_dir: Path, config: Dict[str, Any]) -> Path:
+def _rename_audiobook(
+    folder_path: Path, dest_dir: Path, config: Dict[str, Any]
+) -> Path:
     """Rename audiobook according to common organization."""
     folder_name = folder_path.name
 
@@ -145,7 +148,9 @@ def _parse_tv_show_name(folder_name: str) -> Tuple[Optional[str], Optional[int]]
         return _clean_title(title), season
 
     # Pattern 3: Show Name (Year) Season X
-    pattern3 = re.search(r"^(.+?)\s*\(\d{4}\)\s*season\s+(\d+)", folder_name, re.IGNORECASE)
+    pattern3 = re.search(
+        r"^(.+?)\s*\(\d{4}\)\s*season\s+(\d+)", folder_name, re.IGNORECASE
+    )
     if pattern3:
         title = pattern3.group(1).strip()
         season = int(pattern3.group(2))
@@ -154,7 +159,9 @@ def _parse_tv_show_name(folder_name: str) -> Tuple[Optional[str], Optional[int]]
     # Pattern 4: Just show name (no season info)
     # Remove common junk at the end
     clean_name = re.sub(r"\s*[\[\(].*?[\]\)]", "", folder_name)
-    clean_name = re.sub(r"\s*(complete|series|collection).*$", "", clean_name, flags=re.IGNORECASE)
+    clean_name = re.sub(
+        r"\s*(complete|series|collection).*$", "", clean_name, flags=re.IGNORECASE
+    )
 
     return _clean_title(clean_name), None
 
@@ -179,7 +186,12 @@ def _parse_movie_name(folder_name: str) -> Tuple[Optional[str], Optional[int]]:
 
     # Pattern 3: Just title (no year)
     clean_name = re.sub(r"\s*[\[\(].*?[\]\)]", "", folder_name)
-    clean_name = re.sub(r"\s*(bluray|dvdrip|webrip|hdtv|1080p|720p|4k).*$", "", clean_name, flags=re.IGNORECASE)
+    clean_name = re.sub(
+        r"\s*(bluray|dvdrip|webrip|hdtv|1080p|720p|4k).*$",
+        "",
+        clean_name,
+        flags=re.IGNORECASE,
+    )
 
     return _clean_title(clean_name), None
 

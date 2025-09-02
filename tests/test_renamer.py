@@ -1,10 +1,16 @@
 """Tests for renaming logic."""
 
-import pytest
 from pathlib import Path
 
-from mediamovarr.renamer import get_renamed_path, _parse_tv_show_name, _parse_movie_name, _clean_title
+import pytest
+
 from mediamovarr.classify import MediaType
+from mediamovarr.renamer import (
+    _clean_title,
+    _parse_movie_name,
+    _parse_tv_show_name,
+    get_renamed_path,
+)
 
 
 class TestRenamer:
