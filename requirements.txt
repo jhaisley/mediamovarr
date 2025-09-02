@@ -1,0 +1,6 @@
+# MediaMovarr Requirements
+click>=8.0.0
+requests>=2.25.0
+
+# Development dependencies (optional)
+pytest>=6.0.0

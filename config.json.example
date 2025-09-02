@@ -1,0 +1,84 @@
+{
+  "scan_dirs": [
+    "%USERPROFILE%\\Downloads"
+  ],
+  "dest_dir": "C:\\Media",
+  "tmdb_enabled": true,
+  "tmdb_api_key": "",
+  "tmdb_read_access_token": "",
+  "confidence_thresholds": {
+    "auto_process": 0.9,
+    "require_confirmation": 0.5
+  },
+  "confidence_rules": [
+    {
+      "name": "WAV files penalty",
+      "condition": "filetype",
+      "value": "wav",
+      "adjustment": -0.3,
+      "reason": "WAV files are often sound effects or samples, not music"
+    },
+    {
+      "name": "TMDb match bonus",
+      "condition": "tmdb_match",
+      "value": true,
+      "adjustment": 0.5,
+      "reason": "TMDb match indicates legitimate media content"
+    },
+    {
+      "name": "Large single video file bonus",
+      "condition": "single_large_video",
+      "value": true,
+      "adjustment": 0.2,
+      "reason": "Single large video file likely indicates a movie"
+    },
+    {
+      "name": "Many small files penalty",
+      "condition": "many_small_files",
+      "value": true,
+      "adjustment": -0.2,
+      "reason": "Many small files may indicate samples or non-media content"
+    },
+    {
+      "name": "Season folder structure bonus",
+      "condition": "has_season_structure",
+      "value": true,
+      "adjustment": 0.3,
+      "reason": "Clear season structure indicates TV show"
+    }
+  ],
+  "rules": {
+    "tv_format": "{title}/Season {season:02d}/{title}.S{season:02d}E{episode:02d}",
+    "movie_format": "{title} ({year})",
+    "music_format": "{artist}/{album}/{track:02d} - {title}",
+    "audiobook_format": "{author}/{title}/{chapter:02d} - {chapter_title}"
+  },
+  "file_extensions": {
+    "video": [
+      ".mp4",
+      ".mkv",
+      ".avi",
+      ".mov",
+      ".wmv",
+      ".flv",
+      ".webm",
+      ".m4v"
+    ],
+    "audio": [
+      ".mp3",
+      ".flac",
+      ".wav",
+      ".aac",
+      ".ogg",
+      ".wma",
+      ".m4a"
+    ],
+    "subtitles": [
+      ".srt",
+      ".vtt",
+      ".ass",
+      ".ssa",
+      ".sub"
+    ]
+  }
+}
