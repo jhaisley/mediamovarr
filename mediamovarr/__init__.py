@@ -1,6 +1,6 @@
 """MediaMovarr - Organize downloaded media files according to Plex guidelines."""
 
-__version__ = "1.0.1"
+__version__ = "1.1.0"
 __author__ = "MediaMovarr Team"
 __description__ = (
     "CLI tool to organize downloaded media files according to Plex guidelines"
