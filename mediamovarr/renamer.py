@@ -48,12 +48,48 @@ def _rename_tv_show(folder_path: Path, dest_dir: Path, config: Dict[str, Any]) -
     """Rename TV show according to Plex guidelines."""
     folder_name = folder_path.name
 
+    # Check if source is a file or folder
+    is_file = folder_path.is_file()
+
+    # Check if this is a folder containing a single video file (episode folder)
+    is_episode_folder = False
+    if not is_file and folder_path.is_dir():
+        try:
+            video_extensions = {
+                ".mp4",
+                ".mkv",
+                ".avi",
+                ".mov",
+                ".wmv",
+                ".flv",
+                ".webm",
+                ".m4v",
+            }
+            video_files = [
+                f
+                for f in folder_path.iterdir()
+                if f.is_file() and f.suffix.lower() in video_extensions
+            ]
+            if len(video_files) == 1:
+                is_episode_folder = True
+                logger.debug(
+                    f"Detected episode folder with single video file: {video_files[0].name}"
+                )
+        except (PermissionError, OSError):
+            pass
+
+    logger.debug(
+        f"Processing TV show: {folder_name}, is_file: {is_file}, is_episode_folder: {is_episode_folder}"
+    )
+
     # Extract show title and season
     title, season = _parse_tv_show_name(folder_name)
+    logger.debug(f"Parsed title: '{title}', season: {season}")
 
     if not title:
         # Fallback to original name
         title = _clean_title(folder_name)
+        logger.debug(f"Using fallback title: '{title}'")
 
     # Create destination path: TV Shows/Show Name/Season XX/
     tv_dir = dest_dir / "TV Shows"
@@ -61,9 +97,31 @@ def _rename_tv_show(folder_path: Path, dest_dir: Path, config: Dict[str, Any]) -
 
     if season is not None:
         season_dir = show_dir / f"Season {season:02d}"
-        return season_dir
+
+        # If source is a file or episode folder, generate the complete file path
+        if is_file or is_episode_folder:
+            # Parse episode info and create Plex-compliant filename
+            episode_filename = _generate_episode_filename(folder_name, title, season)
+            logger.debug(f"Generated episode filename: '{episode_filename}'")
+            final_path = season_dir / episode_filename
+            logger.debug(f"Final file path: {final_path}")
+            return final_path
+        else:
+            logger.debug(f"Returning season directory: {season_dir}")
+            return season_dir
     else:
-        return show_dir
+        # If source is a file or episode folder without season info, put in show directory
+        if is_file or is_episode_folder:
+            episode_filename = _generate_episode_filename(folder_name, title, None)
+            logger.debug(
+                f"Generated episode filename (no season): '{episode_filename}'"
+            )
+            final_path = show_dir / episode_filename
+            logger.debug(f"Final file path (no season): {final_path}")
+            return final_path
+        else:
+            logger.debug(f"Returning show directory: {show_dir}")
+            return show_dir
 
 
 def _rename_movie(folder_path: Path, dest_dir: Path, config: Dict[str, Any]) -> Path:
@@ -132,36 +190,59 @@ def _rename_audiobook(
 def _parse_tv_show_name(folder_name: str) -> Tuple[Optional[str], Optional[int]]:
     """Parse TV show name to extract title and season number."""
     folder_name = folder_name.strip()
+    logger.debug(f"Parsing TV show name: '{folder_name}'")
 
-    # Pattern 1: Show Name Season X
-    pattern1 = re.search(r"^(.+?)\s+season\s+(\d+)", folder_name, re.IGNORECASE)
+    # Pattern 1: Show Name (Year) S04E02 format
+    pattern1 = re.search(
+        r"^(.+?)\s*\((\d{4})\)\s+S(\d+)E\d+", folder_name, re.IGNORECASE
+    )
     if pattern1:
         title = pattern1.group(1).strip()
-        season = int(pattern1.group(2))
+        season = int(pattern1.group(3))
+        logger.debug(f"Pattern 1 matched - title: '{title}', season: {season}")
         return _clean_title(title), season
 
-    # Pattern 2: Show Name SX
-    pattern2 = re.search(r"^(.+?)\s+s(\d+)", folder_name, re.IGNORECASE)
+    # Pattern 2: Show Name S04E02 format (without year)
+    pattern2 = re.search(r"^(.+?)\s+S(\d+)E\d+", folder_name, re.IGNORECASE)
     if pattern2:
         title = pattern2.group(1).strip()
         season = int(pattern2.group(2))
+        logger.debug(f"Pattern 2 matched - title: '{title}', season: {season}")
         return _clean_title(title), season
 
-    # Pattern 3: Show Name (Year) Season X
-    pattern3 = re.search(
-        r"^(.+?)\s*\(\d{4}\)\s*season\s+(\d+)", folder_name, re.IGNORECASE
-    )
+    # Pattern 3: Show Name Season X
+    pattern3 = re.search(r"^(.+?)\s+season\s+(\d+)", folder_name, re.IGNORECASE)
     if pattern3:
         title = pattern3.group(1).strip()
         season = int(pattern3.group(2))
+        logger.debug(f"Pattern 3 matched - title: '{title}', season: {season}")
         return _clean_title(title), season
 
-    # Pattern 4: Just show name (no season info)
+    # Pattern 4: Show Name SX (without episode)
+    pattern4 = re.search(r"^(.+?)\s+s(\d+)", folder_name, re.IGNORECASE)
+    if pattern4:
+        title = pattern4.group(1).strip()
+        season = int(pattern4.group(2))
+        logger.debug(f"Pattern 4 matched - title: '{title}', season: {season}")
+        return _clean_title(title), season
+
+    # Pattern 5: Show Name (Year) Season X
+    pattern5 = re.search(
+        r"^(.+?)\s*\(\d{4}\)\s*season\s+(\d+)", folder_name, re.IGNORECASE
+    )
+    if pattern5:
+        title = pattern5.group(1).strip()
+        season = int(pattern5.group(2))
+        logger.debug(f"Pattern 5 matched - title: '{title}', season: {season}")
+        return _clean_title(title), season
+
+    # Pattern 6: Just show name (no season info)
     # Remove common junk at the end
     clean_name = re.sub(r"\s*[\[\(].*?[\]\)]", "", folder_name)
     clean_name = re.sub(
         r"\s*(complete|series|collection).*$", "", clean_name, flags=re.IGNORECASE
     )
+    logger.debug(f"No pattern matched, using cleaned name: '{clean_name}'")
 
     return _clean_title(clean_name), None
 
@@ -238,6 +319,72 @@ def _parse_audiobook_name(folder_name: str) -> Tuple[Optional[str], Optional[str
 
     # Pattern 3: Just title
     return None, _clean_title(folder_name)
+
+
+def _generate_episode_filename(
+    original_name: str, show_title: str, season: Optional[int]
+) -> str:
+    """Generate Plex-compliant episode filename from original filename."""
+    # Extract episode information
+    episode_info = _parse_episode_info(original_name)
+
+    # Get file extension from original
+    original_path = Path(original_name)
+    extension = original_path.suffix or ".mkv"  # Default to .mkv if no extension
+
+    # Generate clean show title for filename
+    clean_show = show_title.replace(" ", ".")
+
+    if episode_info["season"] is not None and episode_info["episode"] is not None:
+        # Format: Show.Name.S01E01.Episode.Title.ext
+        filename = (
+            f"{clean_show}.S{episode_info['season']:02d}E{episode_info['episode']:02d}"
+        )
+        if episode_info["title"]:
+            clean_episode_title = episode_info["title"].replace(" ", ".")
+            filename += f".{clean_episode_title}"
+        filename += extension
+    elif season is not None:
+        # Use provided season if episode parsing failed
+        filename = f"{clean_show}.S{season:02d}E01{extension}"
+    else:
+        # Fallback to cleaned original name
+        clean_name = _clean_title(original_name)
+        filename = f"{clean_name}{extension}"
+
+    return filename
+
+
+def _parse_episode_info(filename: str) -> Dict[str, Optional[Any]]:
+    """Parse episode information from filename."""
+    result: Dict[str, Optional[Any]] = {"season": None, "episode": None, "title": None}
+
+    # Pattern 1: S04E02 format
+    pattern1 = re.search(r"S(\d+)E(\d+)", filename, re.IGNORECASE)
+    if pattern1:
+        result["season"] = int(pattern1.group(1))
+        result["episode"] = int(pattern1.group(2))
+
+        # Try to extract episode title after the episode number
+        after_episode = filename[pattern1.end() :]
+        title_match = re.search(r"^\s*([^\(\[]+)", after_episode)
+        if title_match:
+            title = title_match.group(1).strip()
+            title = re.sub(
+                r"\s*(1080p|720p|x264|x265|bluray|webrip|hdtv).*$",
+                "",
+                title,
+                flags=re.IGNORECASE,
+            )
+            result["title"] = _clean_title(title) if title else None
+
+    # Pattern 2: 4x02 format
+    pattern2 = re.search(r"(\d+)x(\d+)", filename, re.IGNORECASE)
+    if pattern2 and not result["season"]:
+        result["season"] = int(pattern2.group(1))
+        result["episode"] = int(pattern2.group(2))
+
+    return result
 
 
 def _clean_title(title: str) -> str:
